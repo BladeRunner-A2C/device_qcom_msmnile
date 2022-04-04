@@ -40,24 +40,20 @@ TARGET_BOARD_PLATFORM := msmnile
 TARGET_BOOTLOADER_BOARD_NAME := msmnile
 
 TARGET_ARCH := arm64
-TARGET_ARCH_VARIANT := armv8-a
+TARGET_ARCH_VARIANT := armv8-2a
 TARGET_CPU_ABI := arm64-v8a
-TARGET_CPU_ABI2 :=
-TARGET_CPU_VARIANT := generic
+TARGET_CPU_VARIANT := cortex-a76
 
 TARGET_2ND_ARCH := arm
-TARGET_2ND_ARCH_VARIANT := armv7-a-neon
+TARGET_2ND_ARCH_VARIANT := armv8-2a
 TARGET_2ND_CPU_ABI := armeabi-v7a
 TARGET_2ND_CPU_ABI2 := armeabi
-TARGET_2ND_CPU_VARIANT := cortex-a9
-
-TARGET_HW_DISK_ENCRYPTION := true
-TARGET_HW_DISK_ENCRYPTION_PERF := true
+TARGET_2ND_CPU_VARIANT := cortex-a76
 
 BOARD_SECCOMP_POLICY := device/qcom/$(TARGET_BOARD_PLATFORM)/seccomp
 
-TARGET_NO_BOOTLOADER := false
-TARGET_USES_UEFI := true
+TARGET_NO_BOOTLOADER := true
+TARGET_USES_UEFI := false
 TARGET_NO_KERNEL := false
 -include vendor/qcom/prebuilt/msmnile/BoardConfigVendor.mk
 -include $(QCPATH)/common/msmnile/BoardConfigVendor.mk
@@ -69,17 +65,11 @@ BOARD_USE_LEGACY_UI := true
 TARGET_KERNEL_APPEND_DTB := false
 
 # Set Header version for bootimage
-ifneq ($(strip $(TARGET_KERNEL_APPEND_DTB)),true)
-#Enable dtb in boot image and Set Header version
-BOARD_INCLUDE_DTB_IN_BOOTIMG := true
-BOARD_BOOTIMG_HEADER_VERSION := 2
-else
 BOARD_BOOTIMG_HEADER_VERSION := 1
-endif
 BOARD_MKBOOTIMG_ARGS := --header_version $(BOARD_BOOTIMG_HEADER_VERSION)
 
 # Defines for enabling A/B builds
-AB_OTA_UPDATER := true
+AB_OTA_UPDATER := false
 # Full A/B partition update set
 # AB_OTA_PARTITIONS := xbl rpm tz hyp pmic modem abl boot keymaster cmnlib cmnlib64 system bluetooth
 
@@ -88,7 +78,11 @@ AB_OTA_UPDATER := true
 # in the full set mentioned above as part of your make commandline
 AB_OTA_PARTITIONS ?= boot vendor odm
 
+# Metadata
 BOARD_USES_METADATA_PARTITION := true
+
+# OTA
+TARGET_OTA_ASSERT_DEVICE := curtana,excalibur,gram,joyeuse
 
 #Enable compilation of oem-extensions to recovery
 #These need to be explicitly
@@ -112,78 +106,43 @@ else
 TARGET_RECOVERY_FSTAB := device/qcom/msmnile/recovery.fstab
 endif
 TARGET_USERIMAGES_USE_EXT4 := true
-BOARD_BOOTIMAGE_PARTITION_SIZE := 0x06000000
-BOARD_USERDATAIMAGE_PARTITION_SIZE := 48318382080
-BOARD_PERSISTIMAGE_PARTITION_SIZE := 33554432
-BOARD_METADATAIMAGE_PARTITION_SIZE := 16777216
 BOARD_PREBUILT_DTBOIMAGE := out/target/product/msmnile/prebuilt_dtbo.img
-BOARD_DTBOIMG_PARTITION_SIZE := 0x0800000
-BOARD_PERSISTIMAGE_FILE_SYSTEM_TYPE := ext4
-BOARD_FLASH_BLOCK_SIZE := 131072 # (BOARD_KERNEL_PAGESIZE * 64)
+BOARD_BOOTIMAGE_PARTITION_SIZE := 134217728
+BOARD_CACHEIMAGE_PARTITION_SIZE := 402653184
+BOARD_DTBOIMG_PARTITION_SIZE := 8388608
+BOARD_FLASH_BLOCK_SIZE := 131072
 
 #----------------------------------------------------------------------
 # Compile Linux Kernel
 #----------------------------------------------------------------------
-ifeq ($(TARGET_BUILD_VARIANT),user)
-     KERNEL_DEFCONFIG := $(shell ls ./kernel/msm-4.14/arch/arm64/configs/vendor/ | grep sm8...-perf_defconfig)
-endif
 
-ifeq ($(KERNEL_DEFCONFIG),)
-     KERNEL_DEFCONFIG := $(shell ls ./kernel/msm-4.14/arch/arm64/configs/vendor/ | grep sm8..._defconfig)
-endif
+BOARD_KERNEL_CMDLINE += \
+    androidboot.console=ttyMSM0 \
+    androidboot.hardware=qcom \
+    androidboot.memcg=1 \
+    androidboot.usbcontroller=a600000.dwc3 \
+    cgroup.memory=nokmem,nosocket \
+    console=ttyMSM0,115200n8 \
+    earlycon=msm_geni_serial,0xa88000 \
+    loop.max_part=7 \
+    lpm_levels.sleep_disabled=1 \
+    msm_rtb.enabled=1 \
+    msm_rtb.filter=0x237 \
+    service_locator.enable=1 \
+    swiotlb=1 \
+    androidboot.selinux=permissive
 
-BOARD_VENDOR_KERNEL_MODULES := \
-    $(KERNEL_MODULES_OUT)/audio_apr.ko \
-    $(KERNEL_MODULES_OUT)/audio_wglink.ko \
-    $(KERNEL_MODULES_OUT)/audio_q6_pdr.ko \
-    $(KERNEL_MODULES_OUT)/audio_q6_notifier.ko \
-    $(KERNEL_MODULES_OUT)/audio_adsp_loader.ko \
-    $(KERNEL_MODULES_OUT)/audio_q6.ko \
-    $(KERNEL_MODULES_OUT)/audio_usf.ko \
-    $(KERNEL_MODULES_OUT)/audio_pinctrl_wcd.ko \
-    $(KERNEL_MODULES_OUT)/audio_swr.ko \
-    $(KERNEL_MODULES_OUT)/audio_wcd_core.ko \
-    $(KERNEL_MODULES_OUT)/audio_swr_ctrl.ko \
-    $(KERNEL_MODULES_OUT)/audio_wsa881x.ko \
-    $(KERNEL_MODULES_OUT)/audio_platform.ko \
-    $(KERNEL_MODULES_OUT)/audio_hdmi.ko \
-    $(KERNEL_MODULES_OUT)/audio_stub.ko \
-    $(KERNEL_MODULES_OUT)/audio_wcd9xxx.ko \
-    $(KERNEL_MODULES_OUT)/audio_mbhc.ko \
-    $(KERNEL_MODULES_OUT)/audio_wcd934x.ko \
-    $(KERNEL_MODULES_OUT)/audio_wcd9360.ko \
-    $(KERNEL_MODULES_OUT)/audio_wcd_spi.ko \
-    $(KERNEL_MODULES_OUT)/audio_native.ko \
-    $(KERNEL_MODULES_OUT)/audio_machine_msmnile.ko \
-    $(KERNEL_MODULES_OUT)/wil6210.ko \
-    $(KERNEL_MODULES_OUT)/msm_11ad_proxy.ko \
-    $(KERNEL_MODULES_OUT)/mpq-adapter.ko \
-    $(KERNEL_MODULES_OUT)/mpq-dmx-hw-plugin.ko \
-    $(KERNEL_MODULES_OUT)/tspp.ko \
-
-# install lkdtm only for userdebug and eng build variants
-ifneq (,$(filter userdebug eng, $(TARGET_BUILD_VARIANT)))
-    ifeq (,$(findstring perf_defconfig, $(KERNEL_DEFCONFIG)))
-        BOARD_VENDOR_KERNEL_MODULES += $(KERNEL_MODULES_OUT)/lkdtm.ko
-    endif
-endif
-
-BOARD_DO_NOT_STRIP_VENDOR_MODULES := true
-TARGET_USES_ION := true
-TARGET_USES_NEW_ION_API :=true
-TARGET_USES_QCOM_BSP := false
-BOARD_KERNEL_CMDLINE := console=ttyMSM0,115200n8 earlycon=msm_geni_serial,0xa90000 androidboot.hardware=qcom androidboot.console=ttyMSM0 androidboot.memcg=1 lpm_levels.sleep_disabled=1 video=vfb:640x400,bpp=32,memsize=3072000 msm_rtb.filter=0x237 service_locator.enable=1 swiotlb=2048 loop.max_part=7 androidboot.usbcontroller=a600000.dwc3 kpti=off
-
-BOARD_EGL_CFG := device/qcom/$(TARGET_BOARD_PLATFORM)/egl.cfg
-
-BOARD_KERNEL_BASE        := 0x00000000
-BOARD_KERNEL_PAGESIZE    := 4096
+BOARD_KERNEL_BASE := 0x00000000
+BOARD_KERNEL_PAGESIZE := 4096
 BOARD_KERNEL_TAGS_OFFSET := 0x01E00000
-BOARD_RAMDISK_OFFSET     := 0x02000000
+BOARD_RAMDISK_OFFSET := 0x01000000
 
 TARGET_KERNEL_ARCH := arm64
 TARGET_KERNEL_HEADER_ARCH := arm64
 TARGET_KERNEL_CROSS_COMPILE_PREFIX := $(shell pwd)/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin/aarch64-linux-androidkernel-
+
+TARGET_KERNEL_DLKM_DISABLE := true
+TARGET_KERNEL_VERSION := 4.14
 
 KERN_CONF_PATH := kernel/msm-4.14/arch/arm64/configs/vendor/
 KERN_CONF_FILE := $(shell ls $(KERN_CONF_PATH) | grep sm8..._defconfig)
@@ -220,10 +179,6 @@ ifeq ($(HOST_OS),linux)
     ifeq ($(WITH_DEXPREOPT),)
       WITH_DEXPREOPT := true
       WITH_DEXPREOPT_PIC := true
-      ifneq ($(TARGET_BUILD_VARIANT),user)
-        # Retain classes.dex in APK's for non-user builds
-        DEX_PREOPT_DEFAULT := nostripping
-      endif
     endif
 endif
 
@@ -254,6 +209,8 @@ endif
 
 BUILD_BROKEN_DUP_RULES := true
 BUILD_BROKEN_PREBUILT_ELF_FILES := true
+BUILD_BROKEN_ELF_PREBUILT_PRODUCT_COPY_FILES := true
+BUILD_BROKEN_VENDOR_PROPERTY_NAMESPACE := true
 
 BUILD_BROKEN_NINJA_USES_ENV_VARS := SDCLANG_AE_CONFIG SDCLANG_CONFIG SDCLANG_SA_ENABLED SDCLANG_CONFIG_AOSP
 BUILD_BROKEN_NINJA_USES_ENV_VARS += TEMPORARY_DISABLE_PATH_RESTRICTIONS

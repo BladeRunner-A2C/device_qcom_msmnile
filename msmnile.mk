@@ -3,7 +3,7 @@
 #### Turning BOARD_DYNAMIC_PARTITION_ENABLE flag to TRUE will enable dynamic partition/super image creation.
 
 # By default this target is new-launch config, so set the default shipping level to 29 (if not set explictly earlier)
-SHIPPING_API_LEVEL := 30
+SHIPPING_API_LEVEL := 29
 
 # Enable Dynamic partitions only for Q new launch devices.
 ifeq (true,$(call math_gt_or_eq,$(SHIPPING_API_LEVEL),29))
@@ -37,10 +37,10 @@ endif
 #####Dynamic partition Handling
 
 # Default A/B configuration.
-ENABLE_AB ?= true
+ENABLE_AB := false
 
 # Enable virtual-ab by default
-ENABLE_VIRTUAL_AB := true
+ENABLE_VIRTUAL_AB := false
 
 ifeq ($(ENABLE_VIRTUAL_AB), true)
     $(call inherit-product, $(SRC_TARGET_DIR)/product/virtual_ab_ota.mk)
@@ -57,7 +57,7 @@ PRODUCT_BUILD_SYSTEM_EXT_IMAGE := false
 PRODUCT_BUILD_ODM_IMAGE := true
 PRODUCT_BUILD_CACHE_IMAGE := false
 PRODUCT_BUILD_RAMDISK_IMAGE := true
-PRODUCT_BUILD_USERDATA_IMAGE := true
+PRODUCT_BUILD_USERDATA_IMAGE := false
 
 # Also, since we're going to skip building the system image, we also skip
 # building the OTA package. We'll build this at a later step. We also don't
@@ -170,7 +170,6 @@ ifeq ($(ENABLE_VENDOR_IMAGE), true)
 #TARGET_USES_QTIC_EXTENSION := false
 
 endif
-TARGET_KERNEL_VERSION := 4.14
 
 #Enable llvm support for kernel
 KERNEL_LLVM_SUPPORT := true
@@ -209,33 +208,6 @@ PRODUCT_PACKAGES += android.hardware.camera.provider@2.4-service_64
 
 # Audio configuration file
 -include $(TOPDIR)vendor/qcom/opensource/audio-hal/primary-hal/configs/msmnile/msmnile.mk
-
-#Audio DLKM
-AUDIO_DLKM := audio_apr.ko
-AUDIO_DLKM += audio_wglink.ko
-AUDIO_DLKM += audio_q6_pdr.ko
-AUDIO_DLKM += audio_q6_notifier.ko
-AUDIO_DLKM += audio_adsp_loader.ko
-AUDIO_DLKM += audio_q6.ko
-AUDIO_DLKM += audio_usf.ko
-AUDIO_DLKM += audio_pinctrl_wcd.ko
-AUDIO_DLKM += audio_swr.ko
-AUDIO_DLKM += audio_wcd_core.ko
-AUDIO_DLKM += audio_swr_ctrl.ko
-AUDIO_DLKM += audio_wsa881x.ko
-AUDIO_DLKM += audio_platform.ko
-AUDIO_DLKM += audio_hdmi.ko
-AUDIO_DLKM += audio_stub.ko
-AUDIO_DLKM += audio_wcd9xxx.ko
-AUDIO_DLKM += audio_mbhc.ko
-AUDIO_DLKM += audio_wcd9360.ko
-AUDIO_DLKM += audio_wcd_spi.ko
-AUDIO_DLKM += audio_native.ko
-AUDIO_DLKM += audio_machine_msmnile.ko
-AUDIO_DLKM += audio_wcd934x.ko
-PRODUCT_PACKAGES += $(AUDIO_DLKM)
-
-PRODUCT_PACKAGES += fs_config_files
 
 #A/B related packages
 PRODUCT_PACKAGES += update_engine \
@@ -373,6 +345,11 @@ endif
 
 #Enable Light AIDL HAL
 PRODUCT_PACKAGES += android.hardware.lights-service.qti
+
+# Overlays
+PRODUCT_PACKAGES += \
+    MiatollFrameworks \
+    MiatollSystemUI
 
 # Target specific Netflix custom property
 PRODUCT_PROPERTY_OVERRIDES += \
